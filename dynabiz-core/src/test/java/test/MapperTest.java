@@ -50,7 +50,7 @@ public class MapperTest {
         entity.setTime(time);
         entity.setTotalDiscount(new BigDecimal("0.5"));
         entity.setTotalPrice(new BigDecimal("100"));
-        entity.setUserPhone("123456789");
+        entity.setPhone("123456789");
 
         OrderTransfer transfer = Mapper.mapFrom(OrderTransfer.class, entity,
                 new Mapping<OrderEntity, OrderTransfer>() {
@@ -70,7 +70,7 @@ public class MapperTest {
         assert transfer.getTime().equals(entity.getTime());
         assert transfer.getTotalDiscount().equals(entity.getTotalDiscount());
         assert transfer.getTotalPrice().equals(entity.getTotalPrice());
-        assert transfer.getUserPhone().equals(entity.getUserPhone());
+        assert transfer.getUserPhone().equals(entity.getPhone());
         assert transfer.isCanReturns();
     }
 
@@ -81,7 +81,7 @@ public class MapperTest {
         private Timestamp time;
         private BigDecimal totalDiscount;
         private BigDecimal totalPrice;
-        private String userPhone;
+        private String phone;
 
         public long getOrderID() {
             return orderID;
@@ -123,12 +123,12 @@ public class MapperTest {
             this.totalPrice = totalPrice;
         }
 
-        public String getUserPhone() {
-            return userPhone;
+        public String getPhone() {
+            return phone;
         }
 
-        public void setUserPhone(String userPhone) {
-            this.userPhone = userPhone;
+        public void setPhone(String userPhone) {
+            this.phone = userPhone;
         }
 
         @Override
@@ -139,7 +139,7 @@ public class MapperTest {
                     ", time=" + time +
                     ", totalDiscount=" + totalDiscount +
                     ", totalPrice=" + totalPrice +
-                    ", userPhone='" + userPhone + '\'' +
+                    ", phone='" + phone + '\'' +
                     '}';
         }
     }
@@ -155,7 +155,8 @@ public class MapperTest {
         private BigDecimal totalDiscount;
         @Mapped
         private BigDecimal totalPrice;
-        @Mapped
+
+        @Mapped(name = "phone")
         private String userPhone;
         private boolean canReturns;
 
