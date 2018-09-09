@@ -52,13 +52,8 @@ public class MapperTest {
         entity.setTotalPrice(new BigDecimal("100"));
         entity.setPhone("123456789");
 
-        OrderTransfer transfer = Mapper.mapFrom(OrderTransfer.class, entity,
-                new Mapping<OrderEntity, OrderTransfer>() {
-                    @Override
-                    public void mapTo(OrderEntity source, OrderTransfer target) {
-                        target.setCanReturns(true);
-                    }
-                });
+        OrderTransfer transfer = new OrderTransfer();
+        Mapper.mapObject(transfer, entity,(source, target) -> target.setCanReturns(true));
 
 
 
@@ -144,7 +139,7 @@ public class MapperTest {
         }
     }
 
-    public static class OrderTransfer extends MappedData<OrderTransfer> {
+    public static class OrderTransfer {
         @Mapped
         private long orderID;
         @Mapped

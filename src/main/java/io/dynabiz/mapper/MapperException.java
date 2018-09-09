@@ -29,4 +29,8 @@ public class MapperException extends RuntimeException {
         super(e);
     }
 
+    public MapperException(String message){
+        super(message);
+    }
+
 }
