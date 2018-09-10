@@ -25,91 +25,56 @@ package io.dynabiz.mapper;
 
 
 import io.dynabiz.util.Assert;
-
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 /**
- * Created by Deyu Heng on 2017/09/30.
+ * Created by Deyu Heng on 2018/09/3.
  */
-public class Mapper {
+public class ObjectMapper {
 
-    @SuppressWarnings("unchecked")
-    public static <RT extends MappedData> RT mapFrom(Class targetType, Object sources){
-        if(sources == null) return null;
-        RT result;
-        try{
-            result = (RT)targetType.newInstance();
-        }
-        catch (Exception ex){
-            throw new MapperException(ex);
-        }
 
-        result.mapFrom(sources);
-        return result;
+    public static <T, ST> T mapFrom(Class<T> targetType, ST sources){
+        return mapFrom(targetType, sources, null);
     }
 
-
-
-
-    @SuppressWarnings("unchecked")
-    public static <ST,RT extends MappedData> RT mapFrom(Class targetType, ST sources, Mapping<ST, RT> mapping){
-        if(sources == null) return null;
-        RT result;
-        try{
-            result = (RT)targetType.newInstance();
-        }
-        catch (Exception ex){
-            throw new MapperException(ex);
-        }
-        result.mapFrom(sources);
-        mapping.mapTo(sources, result);
-        return result;
-    }
-
-
-
-    @SuppressWarnings("unchecked")
-    public static <RT extends MappedData, ST> Iterable<RT> mapFrom(Class targetType, Iterable<ST> sources, Mapping<ST, RT> mapping) {
-        List<RT> resultList = new ArrayList<RT>();
+    public static <T, ST> T mapFrom(Class<T> targetType, ST sources,  Mapping<ST, T> mapping){
+        T target;
         try {
-            for (ST s : sources) {
-                RT i = (RT) targetType.newInstance();
-                i.mapFrom(s);
-                mapping.mapTo(s, i);
-                resultList.add(i);
-            }
+            target = targetType.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new MapperException(e);
         }
-        catch (Exception ex){
-            throw new MapperException(ex);
-        }
-        return resultList;
+        map(target, sources, mapping);
+        return target;
+    }
+
+    public static <T, ST> void map(T target, ST sources){
+        map(target, sources, null);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T, ST> void mapObject(T target, ST sources, Mapping<ST, T> mapping){
+    public static <T, ST> void map(T target, ST sources, Mapping<ST, T> mapping){
         Objects.requireNonNull(target, "Target object could not be null.");
         Objects.requireNonNull(target, "Source object could not be null.");
 
         Class curType = target.getClass();
-        Map<Class, MappingFilter> filterCache = new HashMap<>();
+        Map<Class, Function> filterCache = new HashMap<>();
         do{
             mapDeclaredFields(curType, target, sources, filterCache);
         }while (!Object.class.equals(curType = curType.getSuperclass()));
-        mapping.mapTo(sources, target);
+
+        if(mapping != null)mapping.mapTo(sources, target);
     }
 
     private static void mapDeclaredFields(Class targetType, Object target, Object sources,
-                                          Map<Class, MappingFilter> filterCache){
+                                          Map<Class, Function> filterCache){
         MappedConfig config = target.getClass().getAnnotation(MappedConfig.class);
         MappedFieldDescription fieldDescription = new MappedFieldDescription();
         Class sourceType = sources.getClass();
@@ -154,6 +119,48 @@ public class Mapper {
 
     }
 
+
+    @SuppressWarnings("unchecked")
+    private static void applyValue(MappedFieldDescription fieldDescription, Object target, Method setter,
+                                   Class sourceType, Object source, Map<Class, Function> filterCache){
+        if(1 != setter.getParameterCount()) throw new IllegalStateException("");
+
+        Object value = readValue(fieldDescription.type, fieldDescription.sourceFieldName, sourceType, source);
+        if(fieldDescription.filterClass != null){
+            Function mappingFilter = filterCache.get(fieldDescription.filterClass);
+            if(mappingFilter == null) {
+                try {
+                    filterCache.put(fieldDescription.filterClass,
+                            mappingFilter = (Function)fieldDescription.filterClass.newInstance());
+                    setter.invoke(source, mappingFilter.apply(value));
+                } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                    throw new MapperException(e);
+                }
+            }
+
+        }
+        else {
+            try {
+                setter.invoke(target, readValue(fieldDescription.type, fieldDescription.sourceFieldName, sourceType, source));
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new MapperException(e);
+            }
+        }
+
+
+    }
+
+
+    private static Object readValue(Class type, String name, Class objType, Object source){
+        Method getter = Assert.notNull(findGetter(type, name, objType),
+                new MapperException(String.format("Cannot find get method with field named %s type %s", name, type)));
+        try {
+            return getter.invoke(source);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new MapperException(e);
+        }
+    }
+
     private static Field[] getMappedFields(Object o){
         Field[] fields = o.getClass().getDeclaredFields();
         Field[] mappedFields = new Field[fields.length];
@@ -176,45 +183,6 @@ public class Mapper {
             }
         }
         return Arrays.copyOf(mappedSetters, mappedCount);
-    }
-
-    private static void applyValue(MappedFieldDescription fieldDescription, Object target, Method setter,
-                                   Class sourceType, Object source, Map<Class, MappingFilter> filterCache){
-        if(1 != setter.getParameterCount()) throw new IllegalStateException("");
-
-        Object value = readValue(fieldDescription.type, fieldDescription.sourceFieldName, sourceType, source);
-        if(fieldDescription.filterClass != null){
-            MappingFilter mappingFilter = filterCache.get(fieldDescription.filterClass);
-            if(mappingFilter == null) {
-                try {
-                    filterCache.put(fieldDescription.filterClass,
-                            mappingFilter = (MappingFilter)fieldDescription.filterClass.newInstance());
-                    setter.invoke(source, mappingFilter.set(value));
-                } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                    throw new MapperException(e);
-                }
-            }
-
-        }
-        else {
-            try {
-                setter.invoke(target, readValue(fieldDescription.type, fieldDescription.sourceFieldName, sourceType, source));
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new MapperException(e);
-            }
-        }
-
-
-    }
-
-    private static Object readValue(Class type, String name, Class objType, Object source){
-        Method getter = Assert.notNull(findGetter(type, name, objType),
-                new MapperException(String.format("Cannot find get method with field named %s type %s", name, type)));
-        try {
-            return getter.invoke(source);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new MapperException(e);
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -267,14 +235,14 @@ public class Mapper {
     }
 
     private static class MappedFieldDescription {
-        public Class[] sourceClasses;
-        public String sourceFieldName;
-        public String fieldName;
-        public Class filterClass;
-        public Class type;
-        public String setterName;
+        private Class[] sourceClasses;
+        private String sourceFieldName;
+        private String fieldName;
+        private Class filterClass;
+        private Class type;
+        private String setterName;
 
-        public void setConfigs(Class type, String fieldName, MappedConfig config, Mapped mapped){
+        private void setConfigs(Class type, String fieldName, MappedConfig config, Mapped mapped){
             this.type = type;
             this.setterName = null;
             this.fieldName = fieldName;

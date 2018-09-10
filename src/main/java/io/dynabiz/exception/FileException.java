@@ -38,7 +38,7 @@ public class FileException extends BusinessException {
     }
 
     private FileException(int code, String message){
-        super(BASE_CODE + code,"FileException:" + message);
+        super(BASE_CODE + code,"FileException:" + message, true);
     }
 
     public static BusinessException[] getAllExceptionTypes(){

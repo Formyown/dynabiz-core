@@ -23,9 +23,7 @@
 package test;
 
 import io.dynabiz.mapper.Mapped;
-import io.dynabiz.mapper.MappedData;
-import io.dynabiz.mapper.Mapper;
-import io.dynabiz.mapper.Mapping;
+import io.dynabiz.mapper.ObjectMapper;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -43,7 +41,6 @@ public class MapperTest {
         System.out.println("+=========================================================+");
 
         Timestamp time = new Timestamp(System.currentTimeMillis());
-
         OrderEntity entity = new OrderEntity();
         entity.setOrderID(1001);
         entity.setItems(new String[]{"A", "B", "C"});
@@ -51,19 +48,16 @@ public class MapperTest {
         entity.setTotalDiscount(new BigDecimal("0.5"));
         entity.setTotalPrice(new BigDecimal("100"));
         entity.setPhone("123456789");
-
         OrderTransfer transfer = new OrderTransfer();
-        Mapper.mapObject(transfer, entity,(source, target) -> target.setCanReturns(true));
 
-
+        ObjectMapper.map(transfer, entity,(source, target) -> target.setCanReturns(true));
 
         System.out.println(entity.toString());
         System.out.println(transfer.toString());
-
         assert transfer.getOrderID() == entity.getOrderID();
         assert transfer.getItems() == entity.getItems();
         assert transfer.getTime().equals(entity.getTime());
-        assert transfer.getTotalDiscount().equals(entity.getTotalDiscount());
+        assert transfer.getTotalDiscount().equals(entity.getTotalDiscount().add(new BigDecimal("10")));
         assert transfer.getTotalPrice().equals(entity.getTotalPrice());
         assert transfer.getUserPhone().equals(entity.getPhone());
         assert transfer.isCanReturns();
@@ -146,7 +140,7 @@ public class MapperTest {
         private String[] items;
         @Mapped
         private Timestamp time;
-        @Mapped
+
         private BigDecimal totalDiscount;
         @Mapped
         private BigDecimal totalPrice;
@@ -183,8 +177,9 @@ public class MapperTest {
             return totalDiscount;
         }
 
+        @Mapped
         public void setTotalDiscount(BigDecimal totalDiscount) {
-            this.totalDiscount = totalDiscount;
+            this.totalDiscount = totalDiscount.add(new BigDecimal("10"));
         }
 
         public BigDecimal getTotalPrice() {

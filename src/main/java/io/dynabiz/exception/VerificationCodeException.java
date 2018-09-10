@@ -34,7 +34,7 @@ public class VerificationCodeException extends BusinessException {
     }
 
     private VerificationCodeException(int code, String message){
-        super(BASE_CODE + code,"VerificationCodeException:" + message);
+        super(BASE_CODE + code,"VerificationCodeException:" + message, true);
     }
 
     public static BusinessException[] getAllExceptionTypes(){

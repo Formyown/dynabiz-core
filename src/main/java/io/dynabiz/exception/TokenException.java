@@ -36,7 +36,7 @@ public class TokenException extends BusinessException {
     }
 
     private TokenException(int code, String message){
-        super(BASE_CODE + code,"TokenException:" + message);
+        super(BASE_CODE + code,"TokenException:" + message, true);
     }
 
     public static BusinessException[] getAllExceptionTypes(){

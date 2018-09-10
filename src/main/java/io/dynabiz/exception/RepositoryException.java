@@ -38,7 +38,7 @@ public class RepositoryException extends BusinessException {
     }
 
     private RepositoryException(int code, String message){
-        super(BASE_CODE + code,"RepositoryException:" + message);
+        super(BASE_CODE + code,"RepositoryException:" + message, true);
     }
 
     public static BusinessException[] getAllExceptionTypes(){

@@ -22,16 +22,30 @@
 
 package io.dynabiz.exception;
 
-public class BusinessException extends RuntimeException {
+public class BusinessException extends RuntimeException implements Cloneable {
     private int code = -1;
     private int subCode = -1;
+
+    private boolean finalInstance = false;
 
     BusinessException(){
         super();
     }
 
+    public BusinessException(BusinessException e){
+        super(e);
+        this.code = e.code;
+        this.subCode = e.subCode;
+    }
+
     public BusinessException(String message){
         super(message);
+    }
+
+    protected BusinessException(int code, String message, boolean finalInstance){
+        super(message);
+        this.code = code;
+        this.finalInstance = finalInstance;
     }
 
     public BusinessException(int code, String message){
@@ -53,16 +67,31 @@ public class BusinessException extends RuntimeException {
         return code;
     }
 
-    public void setCode(int code) {
+    public BusinessException setCode(int code) {
+
+        if(finalInstance){
+            //deep clone new instance to modify
+            BusinessException e = new BusinessException(this);
+            e.code = code;
+            return e;
+        }
         this.code = code;
+        return this;
     }
 
     public int getSubCode() {
         return subCode;
     }
 
-    public void setSubCode(int subCode) {
+    public BusinessException setSubCode(int subCode) {
+        if(finalInstance){
+            //deep clone new instance to modify
+            BusinessException e = new BusinessException(this);
+            e.subCode = subCode;
+            return e;
+        }
         this.subCode = subCode;
+        return this;
     }
 }
 

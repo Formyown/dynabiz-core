@@ -33,6 +33,13 @@ public class ExceptionsTest {
 
     @Test
     public void printBizExceptions() {
+
+        BusinessException fe = FileException.NOT_FOUND.setSubCode(10);
+        BusinessException fe2 = FileException.NOT_FOUND.setSubCode(12);
+        assert fe.getSubCode() == 10;
+        assert fe2.getSubCode() == 12;
+        assert FileException.NOT_FOUND.getSubCode() == -1;
+
         System.out.println("+=========================================================+");
         System.out.println("||                ALL BUSINESS EXCEPTIONS                ||");
         System.out.println("+=========================================================+");
@@ -46,12 +53,8 @@ public class ExceptionsTest {
         bizExceptions.addAll(Arrays.asList(RegisterException.getAllExceptionTypes()));
         bizExceptions.addAll(Arrays.asList(TokenException.getAllExceptionTypes()));
         bizExceptions.addAll(Arrays.asList(VerificationCodeException.getAllExceptionTypes()));
-        Collections.sort(bizExceptions, new Comparator<BusinessException>() {
-            @Override
-            public int compare(BusinessException o1, BusinessException o2) {
-                return o1.getCode() > o2.getCode() ? 1 : o1.getCode() < o2.getCode() ? -1 : 0;
-            }
-        });
+
+        bizExceptions.sort(Comparator.comparingInt(BusinessException::getCode));
 
         for (BusinessException be : bizExceptions){
             System.out.println(String.format("%d : %s",  be.getCode(), be.getMessage()));

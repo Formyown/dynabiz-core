@@ -36,7 +36,7 @@ public class LoginException extends BusinessException {
     }
 
     private LoginException(int code, String message){
-        super(BASE_CODE + code, "LoginException:" + message);
+        super(BASE_CODE + code, "LoginException:" + message, true);
     }
 
     public static BusinessException[] getAllExceptionTypes(){

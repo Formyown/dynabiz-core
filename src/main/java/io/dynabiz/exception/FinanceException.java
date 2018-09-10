@@ -38,7 +38,7 @@ public class FinanceException extends BusinessException {
     }
 
     private FinanceException(int code, String message){
-        super(BASE_CODE + code, "FinanceException:" + message);
+        super(BASE_CODE + code, "FinanceException:" + message, true);
     }
 
     public static BusinessException[] getAllExceptionTypes(){

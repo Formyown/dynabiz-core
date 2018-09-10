@@ -41,7 +41,7 @@ public class RegisterException extends BusinessException {
     }
 
     private RegisterException(int code ,String message) {
-        super(BASE_CODE + code, "RegisterException:" + message);
+        super(BASE_CODE + code, "RegisterException:" + message, true);
     }
 
     public static BusinessException[] getAllExceptionTypes(){

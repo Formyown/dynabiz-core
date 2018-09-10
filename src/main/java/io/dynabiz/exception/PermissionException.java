@@ -35,7 +35,7 @@ public class PermissionException extends BusinessException {
     }
 
     private PermissionException(int code, String message){
-        super(BASE_CODE + code, "PermissionException:" + message);
+        super(BASE_CODE + code, "PermissionException:" + message, true);
     }
 
     public static BusinessException[] getAllExceptionTypes(){
